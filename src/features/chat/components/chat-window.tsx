@@ -13,7 +13,9 @@ import { toast } from "sonner";
 import { ApiError } from "@/lib/api-client";
 import { bumpChatPoll } from "@/lib/chat/poll-events";
 import { ROUTES } from "@/lib/constants";
+import { useIsNativeApp } from "@/lib/native-app";
 import { groupByDay } from "@/lib/date-format";
+import { cn } from "@/lib/utils";
 import { UserAvatar } from "@/components/shared/user-avatar";
 import { ProfileTap } from "@/components/profile/profile-tap";
 import { DateSeparator } from "@/features/chat/components/date-separator";
@@ -46,6 +48,7 @@ interface ChatWindowProps {
 
 export function ChatWindow({ conversationId }: ChatWindowProps) {
   const { user } = useAuthContext();
+  const isNativeApp = useIsNativeApp();
 
   const [conversation, setConversation] = useState<ConversationDetail | null>(null);
   const [unavailable, setUnavailable] = useState(false);
@@ -340,7 +343,12 @@ export function ChatWindow({ conversationId }: ChatWindowProps) {
 
   return (
     <div className="grid h-full min-h-0 flex-1 grid-rows-[auto_minmax(0,1fr)_auto] bg-background">
-      <header className="flex shrink-0 items-center gap-3 border-b border-white/10 bg-background px-3 py-3">
+      <header
+        className={cn(
+          "flex shrink-0 items-center gap-3 border-b border-white/10 bg-background px-3 py-3",
+          isNativeApp && "pt-[var(--app-safe-top)]",
+        )}
+      >
         <Link
           href={ROUTES.messages}
           className="rounded-full p-2 hover:bg-muted"

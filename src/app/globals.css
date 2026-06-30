@@ -139,21 +139,28 @@
   }
   html.native-app {
     -webkit-tap-highlight-color: transparent;
-    --app-safe-top: 40px;
+    --app-safe-top: 44px;
     --app-safe-bottom: 24px;
+    --native-bottom-nav-h: 4.25rem;
   }
   html.native-app body.native-app-body {
     box-sizing: border-box;
     min-height: 100dvh;
-    padding-top: var(--app-safe-top);
     overscroll-behavior-y: none;
   }
   html.native-app .app-shell {
-    height: calc(100dvh - var(--app-safe-top));
-    max-height: calc(100dvh - var(--app-safe-top));
+    height: 100dvh;
+    max-height: 100dvh;
   }
-  html.native-app .native-screen {
-    min-height: calc(100dvh - var(--app-safe-top));
+  html.native-app .native-app-header {
+    height: calc(var(--app-safe-top) + 3.5rem);
+  }
+  html.native-app .native-bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 50;
   }
   html.native-app .chat-composer {
     padding-bottom: max(0.5rem, var(--app-safe-bottom, 0px));

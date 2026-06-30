@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { apiClient } from "@/lib/api-client";
 import { cn } from "@/lib/utils";
 import { InfiniteScrollSentinel } from "@/components/layout/main-shell";
+import { PageHeading } from "@/components/layout/page-heading";
 import { PageLoader } from "@/components/shared/loading";
 import { ProfileTap } from "@/components/profile/profile-tap";
 import { PostCard } from "@/features/feed/components/post-card";
@@ -146,12 +147,13 @@ export function ExplorePage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Explore</h1>
-        <p className="text-sm text-muted-foreground">
-          {isSearching ? `Results for "${activeQuery}"` : "Latest public posts"}
-        </p>
-      </div>
+      <PageHeading
+        title="Explore"
+        subtitle={
+          isSearching ? `Results for "${activeQuery}"` : "Latest public posts"
+        }
+        className="space-y-1"
+      />
 
       <form className="flex gap-2" onSubmit={handleSubmit}>
         <div className="relative flex-1">

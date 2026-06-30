@@ -14,6 +14,7 @@ import {
 import { Logo } from "@/components/shared/logo";
 import { NotificationBell } from "@/components/layout/notification-bell";
 import { EmailVerificationBanner } from "@/components/layout/email-verification-banner";
+import { NativeAppHeader } from "@/components/layout/native-app-header";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
 import { UploadPostModal } from "@/features/feed/components/upload-post-modal";
 import { ROUTES } from "@/lib/constants";
@@ -87,7 +88,8 @@ export function MainShell({ children }: { children: React.ReactNode }) {
   const isNativeApp = useIsNativeApp();
 
   const isChatFullscreen = pathname.startsWith("/conversations/");
-  const showTopHeader = !isNativeApp && !isChatFullscreen;
+  const showWebHeader = !isNativeApp && !isChatFullscreen;
+  const showNativeHeader = isNativeApp && !isChatFullscreen;
 
   const isActive = (href: string) =>
     pathname === href || pathname.startsWith(`${href}/`);
@@ -99,18 +101,17 @@ export function MainShell({ children }: { children: React.ReactNode }) {
       className={cn(
         "app-shell bg-gradient-to-b from-background via-background to-muted/30",
         isNativeApp
-          ? "flex h-full flex-col overflow-hidden"
+          ? "flex h-[100dvh] flex-col overflow-hidden"
           : "min-h-[100dvh]",
         !isChatFullscreen &&
           !isNativeApp &&
           "pb-[calc(4.75rem+env(safe-area-inset-bottom))] lg:pb-0",
-        !isChatFullscreen &&
-          isNativeApp &&
-          "pb-[calc(3.75rem+var(--app-safe-bottom,0px))]",
       )}
     >
+      {showNativeHeader && <NativeAppHeader />}
       <EmailVerificationBanner />
-      {showTopHeader && (
+
+      {showWebHeader && (
         <header className="sticky top-0 z-40 shrink-0 border-b border-white/10 bg-background/70 pt-[env(safe-area-inset-top)] backdrop-blur-xl">
           <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-2 px-3 sm:px-6">
             <Logo href={logoHref} showText={false} size="sm" className="min-w-0 shrink" />
@@ -142,7 +143,8 @@ export function MainShell({ children }: { children: React.ReactNode }) {
       <div
         className={cn(
           "mx-auto flex w-full max-w-6xl lg:gap-8 lg:px-6 lg:py-6",
-          isNativeApp && "min-h-0 flex-1",
+          isNativeApp && "min-h-0 flex-1 overflow-hidden",
+          showNativeHeader && "pt-[calc(var(--app-safe-top)+3.5rem)]",
         )}
       >
         <aside className="sticky top-20 hidden h-[calc(100vh-6rem)] w-56 shrink-0 lg:block">
@@ -159,7 +161,10 @@ export function MainShell({ children }: { children: React.ReactNode }) {
             isChatFullscreen
               ? "flex min-h-0 flex-col overflow-hidden p-0"
               : "px-3 py-4 sm:px-6 sm:py-6 lg:max-w-2xl lg:px-0 lg:py-0 xl:max-w-3xl",
-            isNativeApp && !isChatFullscreen && "min-h-0 overflow-y-auto overscroll-contain",
+            isNativeApp &&
+              !isChatFullscreen &&
+              "min-h-0 overflow-y-auto overscroll-contain pb-[calc(var(--native-bottom-nav-h)+var(--app-safe-bottom))]",
+            isNativeApp && isChatFullscreen && "min-h-0 overflow-hidden",
           )}
         >
           {children}
@@ -169,10 +174,10 @@ export function MainShell({ children }: { children: React.ReactNode }) {
       {!isChatFullscreen && (
         <nav
           className={cn(
-            "z-40 border-t border-white/10 bg-background/95 backdrop-blur-xl lg:hidden",
+            "fixed bottom-0 left-0 right-0 z-50 border-t border-white/10 bg-background/95 backdrop-blur-xl lg:hidden",
             isNativeApp
-              ? "shrink-0 pb-[var(--app-safe-bottom,0px)]"
-              : "fixed bottom-0 left-0 right-0 pb-[env(safe-area-inset-bottom)]",
+              ? "native-bottom-nav pb-[var(--app-safe-bottom)]"
+              : "pb-[env(safe-area-inset-bottom)]",
           )}
         >
           <div className="mx-auto flex max-w-lg items-end justify-between px-1 pb-1.5 pt-1 sm:max-w-xl sm:px-2 sm:pb-2">

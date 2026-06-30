@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { apiClient } from "@/lib/api-client";
 import { InfiniteScrollSentinel } from "@/components/layout/main-shell";
+import { PageHeading } from "@/components/layout/page-heading";
 import { LoadingSkeleton } from "@/components/shared/loading-skeleton";
 import { PostCard } from "@/features/feed/components/post-card";
 import { StoriesBar } from "@/features/stories/components/stories-bar";
@@ -84,10 +85,11 @@ export function FeedPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Home</h1>
-        <p className="text-sm text-muted-foreground">Posts from people you follow</p>
-      </div>
+      <PageHeading
+        title="Home"
+        subtitle="Posts from people you follow"
+        className="space-y-1"
+      />
 
       <StoriesBar onOpenStory={(stories) => setStoryBundle(stories)} />
 

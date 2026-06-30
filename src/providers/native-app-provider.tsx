@@ -9,7 +9,7 @@ import { useAuthContext } from "@/providers/auth-provider";
 const LANDING_PATHS = new Set(["/", "/home"]);
 
 /** Default status-bar inset when env(safe-area-inset-top) is 0 in Android WebView. */
-const ANDROID_STATUS_BAR_PX = 40;
+const ANDROID_STATUS_BAR_PX = 44;
 
 function applyNativeSafeArea(platform: "android" | "ios" | "web") {
   const root = document.documentElement;
