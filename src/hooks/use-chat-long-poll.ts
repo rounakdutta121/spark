@@ -1,6 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useRef } from "react";
+import { CHAT } from "@/lib/constants";
+import { CHAT_POLL_BUMP_EVENT } from "@/lib/chat/poll-events";
 import { apiClient } from "@/lib/api-client";
 import type { MessageView } from "@/types/chat";
 
@@ -17,6 +19,13 @@ interface UseChatLongPollOptions {
   onTyping: (userIds: string[]) => void;
 }
 
+function pollTimeoutMs(): number {
+  if (typeof document === "undefined") return CHAT.pollActiveTimeoutMs;
+  return document.visibilityState === "visible"
+    ? CHAT.pollActiveTimeoutMs
+    : CHAT.pollBackgroundTimeoutMs;
+}
+
 export function useChatLongPoll({
   conversationId,
   enabled = true,
@@ -25,6 +34,7 @@ export function useChatLongPoll({
 }: UseChatLongPollOptions) {
   const sinceRef = useRef<string>(new Date(0).toISOString());
   const abortRef = useRef<AbortController | null>(null);
+  const bumpRef = useRef(0);
   const onMessagesRef = useRef(onMessages);
   const onTypingRef = useRef(onTyping);
 
@@ -37,12 +47,13 @@ export function useChatLongPoll({
     abortRef.current?.abort();
     const controller = new AbortController();
     abortRef.current = controller;
+    const bumpAtStart = bumpRef.current;
 
     try {
       const params = new URLSearchParams({
         conversationId,
         since: sinceRef.current,
-        timeoutMs: "8000",
+        timeoutMs: String(pollTimeoutMs()),
       });
 
       const result = await apiClient<PollResponse>(
@@ -62,12 +73,22 @@ export function useChatLongPoll({
       if (error instanceof Error && error.name === "AbortError") return;
     }
 
-    if (!controller.signal.aborted && enabled) {
+    if (
+      !controller.signal.aborted &&
+      enabled &&
+      bumpRef.current === bumpAtStart
+    ) {
       window.setTimeout(() => {
         void runPoll();
       }, 0);
     }
   }, [conversationId, enabled]);
+
+  const schedulePoll = useCallback(() => {
+    bumpRef.current += 1;
+    abortRef.current?.abort();
+    void runPoll();
+  }, [runPoll]);
 
   useEffect(() => {
     sinceRef.current = new Date(0).toISOString();
@@ -75,10 +96,22 @@ export function useChatLongPoll({
 
     void runPoll();
 
+    const onBump = () => schedulePoll();
+    const onVisible = () => {
+      if (document.visibilityState === "visible") schedulePoll();
+    };
+
+    window.addEventListener(CHAT_POLL_BUMP_EVENT, onBump);
+    document.addEventListener("visibilitychange", onVisible);
+
     return () => {
       abortRef.current?.abort();
+      window.removeEventListener(CHAT_POLL_BUMP_EVENT, onBump);
+      document.removeEventListener("visibilitychange", onVisible);
     };
-  }, [conversationId, enabled, runPoll]);
+  }, [conversationId, enabled, runPoll, schedulePoll]);
+
+  return { bumpPoll: schedulePoll };
 }
 
 export async function sendTypingState(

@@ -1,5 +1,6 @@
 import type { UserRole } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { deleteUserAndCleanupConversations } from "@/services/chat/conversation-cleanup.service";
 
 export class AdminError extends Error {
   constructor(
@@ -94,7 +95,7 @@ export async function setUserRole(userId: string, role: UserRole) {
 }
 
 export async function deleteUserAccount(userId: string) {
-  await prisma.user.delete({ where: { id: userId } });
+  await deleteUserAndCleanupConversations(userId);
 }
 
 export async function listReports(status?: "PENDING" | "REVIEWED" | "DISMISSED") {

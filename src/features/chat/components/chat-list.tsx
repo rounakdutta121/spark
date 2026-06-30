@@ -52,10 +52,9 @@ export function ChatList() {
   });
 
   useEffect(() => {
-    const interval = window.setInterval(() => {
-      void refresh();
-    }, 15_000);
-    return () => window.clearInterval(interval);
+    const onFocus = () => void refresh();
+    window.addEventListener("focus", onFocus);
+    return () => window.removeEventListener("focus", onFocus);
   }, [refresh]);
 
   return (
@@ -84,7 +83,7 @@ export function ChatList() {
         <ChatListSkeleton />
       ) : items.length === 0 ? (
         <p className="py-12 text-center text-sm text-muted-foreground">
-          No conversations yet. Match with someone to start chatting!
+          No conversations yet. Follow someone and send a message to get started!
         </p>
       ) : (
         <div className="space-y-2">

@@ -223,7 +223,18 @@ export async function logoutUser(refreshToken: string | null): Promise<void> {
 }
 
 export async function getUserById(userId: string): Promise<AuthUser | null> {
-  const user = await prisma.user.findUnique({ where: { id: userId } });
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      profileCompleted: true,
+      emailVerified: true,
+      role: true,
+      createdAt: true,
+    },
+  });
   if (!user) return null;
   return toAuthUser(user);
 }

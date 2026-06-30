@@ -3,8 +3,6 @@ import { getAuthenticatedPayload, getRefreshTokenFromCookies } from "@/lib/api/a
 import { hashToken } from "@/lib/auth/tokens";
 import { prisma } from "@/lib/prisma";
 import {
-  assertAccountActive,
-  assertEmailVerified,
   AccountSuspendedError,
   EmailNotVerifiedError,
 } from "@/lib/api/require-verified";
@@ -24,6 +22,7 @@ async function getUserIdFromRefreshToken(): Promise<string | null> {
 
   const stored = await prisma.refreshToken.findUnique({
     where: { tokenHash: hashToken(refreshToken) },
+    select: { userId: true, revokedAt: true, expiresAt: true },
   });
 
   if (!stored || stored.revokedAt || stored.expiresAt < new Date()) {
@@ -33,23 +32,37 @@ async function getUserIdFromRefreshToken(): Promise<string | null> {
   return stored.userId;
 }
 
-export async function requireUserId(): Promise<string> {
+async function resolveUserId(): Promise<string | null> {
   const payload = await getAuthenticatedPayload();
-  let userId: string | null = payload?.sub ?? null;
+  if (payload?.sub) return payload.sub;
+  return getUserIdFromRefreshToken();
+}
 
-  if (!userId) {
-    userId = await getUserIdFromRefreshToken();
-  }
+async function loadUserAccess(userId: string) {
+  return prisma.user.findUnique({
+    where: { id: userId },
+    select: { isActive: true, emailVerified: true },
+  });
+}
 
+export async function requireUserId(): Promise<string> {
+  const userId = await resolveUserId();
   if (!userId) throw new UnauthorizedError();
 
-  await assertAccountActive(userId);
+  const user = await loadUserAccess(userId);
+  if (!user) throw new UnauthorizedError();
+  if (!user.isActive) throw new AccountSuspendedError();
   return userId;
 }
 
 export async function requireVerifiedUserId(): Promise<string> {
-  const userId = await requireUserId();
-  await assertEmailVerified(userId);
+  const userId = await resolveUserId();
+  if (!userId) throw new UnauthorizedError();
+
+  const user = await loadUserAccess(userId);
+  if (!user) throw new UnauthorizedError();
+  if (!user.isActive) throw new AccountSuspendedError();
+  if (!user.emailVerified) throw new EmailNotVerifiedError();
   return userId;
 }
 

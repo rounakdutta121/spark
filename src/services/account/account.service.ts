@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { hashPassword, verifyPassword } from "@/lib/auth/password";
+import { deleteUserAndCleanupConversations } from "@/services/chat/conversation-cleanup.service";
 
 export class AccountServiceError extends Error {
   constructor(
@@ -52,7 +53,7 @@ export async function logoutAllDevices(userId: string): Promise<void> {
 }
 
 export async function deleteAccount(userId: string): Promise<void> {
-  await prisma.user.delete({ where: { id: userId } });
+  await deleteUserAndCleanupConversations(userId);
 }
 
 export async function updateNotificationSettings(

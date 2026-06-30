@@ -125,13 +125,15 @@ export async function sendMessage(
     userId,
   );
 
-  await createNotification({
-    userId: otherUserId,
-    type: "MESSAGE",
-    title: "New message",
-    body: text?.slice(0, 120) ?? "Sent you a message",
-    data: { conversationId: input.conversationId, messageId: message.id, userId },
-  });
+  if (otherUserId) {
+    await createNotification({
+      userId: otherUserId,
+      type: "MESSAGE",
+      title: "New message",
+      body: text?.slice(0, 120) ?? "Sent you a message",
+      data: { conversationId: input.conversationId, messageId: message.id, userId },
+    });
+  }
 
   return view;
 }
@@ -268,7 +270,7 @@ export async function addReaction(
     userId,
   );
 
-  if (otherUserId !== userId) {
+  if (otherUserId && otherUserId !== userId) {
     await createNotification({
       userId: otherUserId,
       type: "LIKE",

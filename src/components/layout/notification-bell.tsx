@@ -8,6 +8,9 @@ import { NOTIFICATIONS_UPDATED_EVENT } from "@/lib/social/notification-events";
 import { ROUTES } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 
+const POLL_MS = 60_000;
+const INITIAL_DELAY_MS = 2_000;
+
 export function NotificationBell() {
   const [unread, setUnread] = useState(0);
 
@@ -18,14 +21,15 @@ export function NotificationBell() {
         .catch(() => {});
     };
 
-    load();
-    const interval = window.setInterval(load, 30_000);
+    const initial = window.setTimeout(load, INITIAL_DELAY_MS);
+    const interval = window.setInterval(load, POLL_MS);
     const onUpdate = () => load();
-    window.addEventListener("focus", load);
+    window.addEventListener("focus", onUpdate);
     window.addEventListener(NOTIFICATIONS_UPDATED_EVENT, onUpdate);
     return () => {
+      window.clearTimeout(initial);
       window.clearInterval(interval);
-      window.removeEventListener("focus", load);
+      window.removeEventListener("focus", onUpdate);
       window.removeEventListener(NOTIFICATIONS_UPDATED_EVENT, onUpdate);
     };
   }, []);

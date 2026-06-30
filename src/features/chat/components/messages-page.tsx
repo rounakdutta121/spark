@@ -8,7 +8,7 @@ export function MessagesPage() {
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Messages</h1>
         <p className="text-sm text-muted-foreground">
-          Chat with your matches in real time
+          Chat with people you follow in real time
         </p>
       </div>
       <ChatList />

@@ -71,6 +71,12 @@ export const CHAT = {
   deleteEveryoneWindowMs: 15 * 60 * 1000,
   typingDebounceMs: 400,
   typingStopDelayMs: 2000,
+  /** Long-poll hold while the chat tab is visible (ms). */
+  pollActiveTimeoutMs: 2_500,
+  /** Long-poll hold when the tab is in the background (ms). */
+  pollBackgroundTimeoutMs: 6_000,
+  /** Server-side DB check interval inside a long-poll (ms). */
+  pollServerIntervalMs: 350,
   messageRateLimit: { maxAttempts: 30, windowMs: 60 * 1000 },
   reactionRateLimit: { maxAttempts: 60, windowMs: 60 * 1000 },
   placeholderGifs: [

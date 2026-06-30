@@ -5,11 +5,11 @@ import {
   validationErrorResponse,
 } from "@/lib/api/response";
 import {
-  requireUserId,
+  authErrorResponse,
+  requireVerifiedUserId,
   unauthorizedResponse,
   UnauthorizedError,
 } from "@/lib/api/require-auth";
-import { gateVerifiedUser } from "@/lib/api/verified-gate";
 import { ChatAccessError } from "@/services/chat/access.service";
 import {
   markMessagesDelivered,
@@ -25,9 +25,7 @@ const receiptsSchema = z.object({
 
 export async function POST(request: Request) {
   try {
-    const userId = await requireUserId();
-    const gate = await gateVerifiedUser(userId);
-    if (gate) return gate;
+    const userId = await requireVerifiedUserId();
 
     const body = await request.json();
     const parsed = receiptsSchema.safeParse(body);
@@ -44,6 +42,8 @@ export async function POST(request: Request) {
     return successResponse(result);
   } catch (error) {
     if (error instanceof UnauthorizedError) return unauthorizedResponse();
+    const access = authErrorResponse(error);
+    if (access) return access;
     if (error instanceof ChatAccessError || error instanceof MessageServiceError) {
       return errorResponse(error.message, error.statusCode, error.code);
     }

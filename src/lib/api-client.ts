@@ -27,6 +27,7 @@ export async function apiClient<T>(
 
   const response = await fetch(url, {
     ...options,
+    credentials: "same-origin",
     headers,
   });
 

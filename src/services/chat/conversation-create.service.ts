@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import {
   assertCanStartConversation,
-  getOtherUserIdFromParticipants,
+  findOtherUserIdFromParticipants,
 } from "@/services/chat/access.service";
 
 export async function findConversationBetween(
@@ -47,10 +47,10 @@ export async function getOrCreateConversation(
 export async function getOtherUserIdForConversation(
   conversationId: string,
   userId: string,
-): Promise<string> {
+): Promise<string | null> {
   const participants = await prisma.conversationParticipant.findMany({
     where: { conversationId },
     select: { userId: true },
   });
-  return getOtherUserIdFromParticipants(participants, userId);
+  return findOtherUserIdFromParticipants(participants, userId);
 }

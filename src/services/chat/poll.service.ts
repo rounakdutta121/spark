@@ -1,3 +1,4 @@
+import { CHAT } from "@/lib/constants";
 import { sleep } from "@/utils";
 import { prisma } from "@/lib/prisma";
 import {
@@ -24,13 +25,7 @@ async function fetchConversationChanges(
   conversationId: string,
   since: Date,
 ): Promise<ChatPollResult> {
-  await assertConversationAccess(userId, conversationId);
-
   const now = new Date();
-
-  await prisma.chatTyping.deleteMany({
-    where: { expiresAt: { lt: now } },
-  });
 
   const [messages, typingRows] = await Promise.all([
     prisma.message.findMany({
@@ -65,10 +60,15 @@ export async function pollConversationUpdates(
   conversationId: string,
   options: { since?: string; timeoutMs?: number },
 ): Promise<ChatPollResult> {
+  await assertConversationAccess(userId, conversationId);
+
   const since = options.since ? new Date(options.since) : new Date(0);
-  const timeoutMs = Math.min(options.timeoutMs ?? 8_000, 8_000);
+  const timeoutMs = Math.min(
+    options.timeoutMs ?? CHAT.pollActiveTimeoutMs,
+    8_000,
+  );
   const deadline = Date.now() + timeoutMs;
-  const pollIntervalMs = 1_000;
+  const pollIntervalMs = CHAT.pollServerIntervalMs;
 
   while (Date.now() < deadline) {
     const result = await fetchConversationChanges(userId, conversationId, since);
@@ -95,14 +95,21 @@ export async function setTypingState(
     return;
   }
 
-  const expiresAt = new Date(Date.now() + 4_000);
-  await prisma.chatTyping.upsert({
-    where: {
-      conversationId_userId: { conversationId, userId },
-    },
-    create: { conversationId, userId, expiresAt },
-    update: { expiresAt },
-  });
+  const now = new Date();
+  const expiresAt = new Date(now.getTime() + 4_000);
+
+  await prisma.$transaction([
+    prisma.chatTyping.deleteMany({
+      where: { expiresAt: { lt: now } },
+    }),
+    prisma.chatTyping.upsert({
+      where: {
+        conversationId_userId: { conversationId, userId },
+      },
+      create: { conversationId, userId, expiresAt },
+      update: { expiresAt },
+    }),
+  ]);
 }
 
 export async function touchUserPresence(userId: string): Promise<void> {

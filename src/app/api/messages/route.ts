@@ -5,7 +5,8 @@ import {
   validationErrorResponse,
 } from "@/lib/api/response";
 import {
-  requireUserId,
+  authErrorResponse,
+  requireVerifiedUserId,
   unauthorizedResponse,
   UnauthorizedError,
 } from "@/lib/api/require-auth";
@@ -17,13 +18,10 @@ import {
   MessageServiceError,
   sendMessage,
 } from "@/services/chat/message.service";
-import { gateVerifiedUser } from "@/lib/api/verified-gate";
 
 export async function GET(request: NextRequest) {
   try {
-    const userId = await requireUserId();
-    const gate = await gateVerifiedUser(userId);
-    if (gate) return gate;
+    const userId = await requireVerifiedUserId();
     const conversationId = request.nextUrl.searchParams.get("conversationId");
 
     if (!conversationId) {
@@ -41,6 +39,8 @@ export async function GET(request: NextRequest) {
     return successResponse(result);
   } catch (error) {
     if (error instanceof UnauthorizedError) return unauthorizedResponse();
+    const access = authErrorResponse(error);
+    if (access) return access;
     if (error instanceof ChatAccessError) {
       return errorResponse(error.message, error.statusCode, error.code);
     }
@@ -51,9 +51,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const userId = await requireUserId();
-    const gate = await gateVerifiedUser(userId);
-    if (gate) return gate;
+    const userId = await requireVerifiedUserId();
     const contentType = request.headers.get("content-type") ?? "";
 
     if (contentType.includes("multipart/form-data")) {
@@ -94,6 +92,8 @@ export async function POST(request: NextRequest) {
     return successResponse({ message }, 201);
   } catch (error) {
     if (error instanceof UnauthorizedError) return unauthorizedResponse();
+    const access = authErrorResponse(error);
+    if (access) return access;
     if (error instanceof UploadError) {
       return errorResponse(error.message, error.statusCode);
     }

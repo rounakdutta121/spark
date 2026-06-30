@@ -5,7 +5,6 @@ import { toast } from "sonner";
 import { apiClient } from "@/lib/api-client";
 import { InfiniteScrollSentinel } from "@/components/layout/main-shell";
 import { LoadingSkeleton } from "@/components/shared/loading-skeleton";
-import { PageLoader } from "@/components/shared/loading";
 import { PostCard } from "@/features/feed/components/post-card";
 import { StoriesBar } from "@/features/stories/components/stories-bar";
 import { StoryViewer } from "@/features/stories/components/story-viewer";
@@ -83,10 +82,6 @@ export function FeedPage() {
     );
   };
 
-  if (loading && posts.length === 0) {
-    return <PageLoader label="Loading your feed…" />;
-  }
-
   return (
     <div className="space-y-6">
       <div>
@@ -96,7 +91,12 @@ export function FeedPage() {
 
       <StoriesBar onOpenStory={(stories) => setStoryBundle(stories)} />
 
-      {!loading && posts.length === 0 ? (
+      {loading && posts.length === 0 ? (
+        <div className="space-y-4">
+          <LoadingSkeleton variant="card" />
+          <LoadingSkeleton variant="card" />
+        </div>
+      ) : !loading && posts.length === 0 ? (
         <div className="py-16 text-center">
           <h2 className="text-lg font-semibold">Your feed is empty</h2>
           <p className="mt-2 text-sm text-muted-foreground">

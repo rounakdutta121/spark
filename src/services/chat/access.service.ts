@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { areUsersBlocked } from "@/services/moderation/block.service";
 import { getFollowStatus } from "@/services/social/follow.service";
+import { removeOrphanedConversations } from "@/services/chat/conversation-cleanup.service";
 
 export class ChatAccessError extends Error {
   constructor(
@@ -57,6 +58,7 @@ export async function assertConversationAccess(
   )?.userId;
 
   if (!otherId) {
+    await removeOrphanedConversations([conversationId]);
     throw new ChatAccessError("Conversation not found", 404, "NOT_FOUND");
   }
 
@@ -83,11 +85,18 @@ export async function assertCanStartConversation(
   }
 }
 
+export function findOtherUserIdFromParticipants(
+  participants: { userId: string }[],
+  userId: string,
+): string | null {
+  return participants.find((p) => p.userId !== userId)?.userId ?? null;
+}
+
 export function getOtherUserIdFromParticipants(
   participants: { userId: string }[],
   userId: string,
 ): string {
-  const other = participants.find((p) => p.userId !== userId);
-  if (!other) throw new ChatAccessError("Conversation not found", 404);
-  return other.userId;
+  const otherId = findOtherUserIdFromParticipants(participants, userId);
+  if (!otherId) throw new ChatAccessError("Conversation not found", 404);
+  return otherId;
 }

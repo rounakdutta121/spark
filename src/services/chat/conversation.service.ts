@@ -1,8 +1,10 @@
 import type { MessageType } from "@prisma/client";
 import { PAGINATION } from "@/lib/constants";
 import { prisma } from "@/lib/prisma";
+import { removeOrphanedConversations } from "@/services/chat/conversation-cleanup.service";
 import {
   assertConversationAccess,
+  findOtherUserIdFromParticipants,
   getOtherUserIdFromParticipants,
 } from "@/services/chat/access.service";
 import { getBlockedUserIds } from "@/services/moderation/block.service";
@@ -79,8 +81,25 @@ export async function listConversations(
     ...(options.cursor ? { cursor: { id: options.cursor }, skip: 1 } : {}),
   });
 
-  const otherIds = participants.map((p) =>
-    getOtherUserIdFromParticipants(p.conversation.participants, userId),
+  const orphaned = participants.filter(
+    (p) =>
+      findOtherUserIdFromParticipants(p.conversation.participants, userId) ==
+      null,
+  );
+  if (orphaned.length > 0) {
+    await removeOrphanedConversations(
+      orphaned.map((p) => p.conversation.id),
+    );
+  }
+
+  const eligible = participants.filter(
+    (p) =>
+      findOtherUserIdFromParticipants(p.conversation.participants, userId) !=
+      null,
+  );
+
+  const otherIds = eligible.map((p) =>
+    findOtherUserIdFromParticipants(p.conversation.participants, userId)!,
   );
 
   const profiles = await prisma.profile.findMany({
@@ -93,11 +112,11 @@ export async function listConversations(
 
   const profileMap = new Map(profiles.map((p) => [p.userId, p]));
 
-  let items = participants.map((participant) => {
-    const otherId = getOtherUserIdFromParticipants(
+  let items = eligible.map((participant) => {
+    const otherId = findOtherUserIdFromParticipants(
       participant.conversation.participants,
       userId,
-    );
+    )!;
     const profile = profileMap.get(otherId);
     const lastMsg = participant.conversation.messages[0] ?? null;
 
@@ -138,7 +157,7 @@ export async function listConversations(
   const blockedIds = await getBlockedUserIds(userId);
   items = items.filter((item) => !blockedIds.has(item.otherUser.id));
 
-  const hasMore = items.length > limit;
+  const hasMore = participants.length > limit;
   const page = items.slice(0, limit).map(
     ({ id, otherUser, lastMessage, lastMessageAt, unreadCount }) => ({
       id,

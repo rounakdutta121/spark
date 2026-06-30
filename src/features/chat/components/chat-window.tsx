@@ -10,6 +10,8 @@ import {
 import Link from "next/link";
 import { ArrowLeft, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
+import { ApiError } from "@/lib/api-client";
+import { bumpChatPoll } from "@/lib/chat/poll-events";
 import { ROUTES } from "@/lib/constants";
 import { groupByDay } from "@/lib/date-format";
 import { UserAvatar } from "@/components/shared/user-avatar";
@@ -46,6 +48,7 @@ export function ChatWindow({ conversationId }: ChatWindowProps) {
   const { user } = useAuthContext();
 
   const [conversation, setConversation] = useState<ConversationDetail | null>(null);
+  const [unavailable, setUnavailable] = useState(false);
   const [messages, setMessages] = useState<MessageView[]>([]);
   const [replyTo, setReplyTo] = useState<MessageView | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -64,6 +67,7 @@ export function ChatWindow({ conversationId }: ChatWindowProps) {
     isLoadingMore,
     hasMore,
     loadMore,
+    error: messagesError,
   } = useInfiniteCursor<MessageView>({
     fetchPage: async (cursor) =>
       fetchMessages({ conversationId, cursor, limit: 30 }),
@@ -72,10 +76,26 @@ export function ChatWindow({ conversationId }: ChatWindowProps) {
   });
 
   useEffect(() => {
-    void fetchConversation(conversationId).then((r) =>
-      setConversation(r.conversation),
-    );
+    setUnavailable(false);
+    void fetchConversation(conversationId)
+      .then((r) => setConversation(r.conversation))
+      .catch((err) => {
+        if (err instanceof ApiError && err.statusCode === 404) {
+          setUnavailable(true);
+          return;
+        }
+        toast.error(
+          err instanceof Error ? err.message : "Failed to load conversation",
+        );
+      });
   }, [conversationId]);
+
+  useEffect(() => {
+    if (!messagesError) return;
+    if (messagesError.includes("not found") || messagesError.includes("Not found")) {
+      setUnavailable(true);
+    }
+  }, [messagesError]);
 
   useEffect(() => {
     if (!olderMessages.length) return;
@@ -151,6 +171,7 @@ export function ChatWindow({ conversationId }: ChatWindowProps) {
       setMessages((prev) =>
         prev.map((m) => (m.id === optimistic.id ? message : m)),
       );
+      bumpChatPoll();
     } catch (err) {
       setMessages((prev) => prev.filter((m) => m.id !== optimistic.id));
       toast.error(err instanceof Error ? err.message : "Failed to send");
@@ -298,6 +319,24 @@ export function ChatWindow({ conversationId }: ChatWindowProps) {
     ? typingUserIds.includes(conversation.otherUser.id)
     : false;
   const isOnline = conversation?.otherUser.isOnline ?? false;
+
+  if (unavailable) {
+    return (
+      <div className="flex h-[calc(100dvh-3.5rem)] flex-col items-center justify-center gap-4 px-6 text-center">
+        <p className="text-lg font-semibold">Conversation unavailable</p>
+        <p className="text-sm text-muted-foreground">
+          This person may have deleted their account. Your message history was
+          removed.
+        </p>
+        <Link
+          href={ROUTES.messages}
+          className="rounded-full bg-[#FF4458] px-5 py-2 text-sm font-medium text-white"
+        >
+          Back to messages
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-[calc(100dvh-3.5rem)] flex-col">

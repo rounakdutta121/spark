@@ -9,9 +9,11 @@ export async function getHomeFeed(
   cursor?: string,
   limit = 10,
 ): Promise<FeedResponse> {
-  const excluded = await getBlockedAndMutedIds(userId);
-  const following = await getFollowingIds(userId);
-  const suggested = await getSuggestedUserIds(userId, 5);
+  const [excluded, following, suggested] = await Promise.all([
+    getBlockedAndMutedIds(userId),
+    getFollowingIds(userId),
+    getSuggestedUserIds(userId, 5),
+  ]);
 
   const authorIds = [...new Set([userId, ...following, ...suggested])].filter(
     (id) => !excluded.has(id),
