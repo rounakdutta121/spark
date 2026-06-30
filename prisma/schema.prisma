@@ -1,0 +1,666 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  NON_BINARY
+  OTHER
+}
+
+enum InterestedIn {
+  MEN
+  WOMEN
+  EVERYONE
+  NON_BINARY
+}
+
+enum RelationshipGoal {
+  CASUAL
+  LONG_TERM
+  MARRIAGE
+  FRIENDSHIP
+  NOT_SURE
+}
+
+enum LifestyleHabit {
+  NEVER
+  SOMETIMES
+  REGULARLY
+  PREFER_NOT_TO_SAY
+}
+
+enum PetsPreference {
+  NONE
+  DOGS
+  CATS
+  BOTH
+  OTHER
+  PREFER_NOT_TO_SAY
+}
+
+model User {
+  id               String           @id @default(cuid())
+  name             String
+  email            String           @unique
+  password         String
+  role             UserRole         @default(USER)
+  emailVerified    Boolean          @default(false)
+  emailVerifiedAt  DateTime?
+  profileCompleted Boolean          @default(false)
+  isActive         Boolean          @default(true)
+  subscriptionTier SubscriptionTier @default(FREE)
+  lastActiveAt     DateTime         @default(now())
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  profile              Profile?
+  settings             UserSettings?
+  location             UserLocation?
+  sessions             Session[]
+  refreshTokens        RefreshToken[]
+  verificationTokens   VerificationToken[]
+  blocksSent           UserBlock[]       @relation("BlocksSent")
+  blocksReceived       UserBlock[]       @relation("BlocksReceived")
+  reportsFiled         UserReport[]      @relation("ReportsFiled")
+  reportsReceived      UserReport[]      @relation("ReportsReceived")
+  messagesSent         Message[]         @relation("MessagesSent")
+  messageReactions     MessageReaction[]
+  messageHides         MessageHide[]
+  notifications        Notification[]
+  conversationStates   ConversationParticipant[]
+  followers            Follow[]          @relation("UserFollowers")
+  following            Follow[]          @relation("UserFollowing")
+  posts                Post[]
+  postLikes            PostLike[]
+  postComments         PostComment[]
+  commentLikes         CommentLike[]
+  savedPosts           SavedPost[]
+  stories              Story[]
+  storyViews           StoryView[]
+  storyReactions       StoryReaction[]
+  storyComments        StoryComment[]
+  mutesSent            UserMute[]        @relation("MutesSent")
+  mutesReceived        UserMute[]        @relation("MutesReceived")
+  mentionsReceived     PostMention[]
+
+  @@index([isActive, lastActiveAt])
+  @@map("users")
+}
+
+model Profile {
+  id                String            @id @default(cuid())
+  userId            String            @unique
+  user              User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bio               String?
+  username          String?           @unique
+  gender            Gender?
+  interestedIn      InterestedIn?
+  birthday          DateTime?
+  height            Int?
+  occupation        String?
+  education         String?
+  city              String?
+  country           String?
+  latitude          Float?
+  longitude         Float?
+  relationshipGoal  RelationshipGoal?
+  smoking           LifestyleHabit?
+  drinking          LifestyleHabit?
+  pets              PetsPreference?
+  profileCompletion Int               @default(0)
+  verified          Boolean           @default(false)
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  photos    Photo[]
+  interests ProfileInterest[]
+
+  @@index([profileCompletion])
+  @@index([gender])
+  @@index([verified])
+  @@index([updatedAt])
+  @@map("profiles")
+}
+
+model Photo {
+  id        String   @id @default(cuid())
+  profileId String
+  profile   Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  url       String
+  order     Int      @default(0)
+  isPrimary Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([profileId])
+  @@map("photos")
+}
+
+model Interest {
+  id       String            @id @default(cuid())
+  name     String            @unique
+  icon     String
+  profiles ProfileInterest[]
+
+  @@map("interests")
+}
+
+model ProfileInterest {
+  profileId  String
+  interestId String
+  profile    Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  interest   Interest @relation(fields: [interestId], references: [id], onDelete: Cascade)
+
+  @@id([profileId, interestId])
+  @@map("profile_interests")
+}
+
+model UserSettings {
+  id                 String          @id @default(cuid())
+  userId             String          @unique
+  user               User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  profileVisible     Boolean         @default(true)
+  isPrivateAccount   Boolean         @default(false)
+  showDistance       Boolean         @default(true)
+  showAge            Boolean         @default(true)
+  pushNotifications  Boolean         @default(true)
+  emailNotifications Boolean         @default(true)
+  darkMode           Boolean         @default(false)
+  messagePermission  PermissionLevel @default(EVERYONE)
+  mentionPermission  PermissionLevel @default(EVERYONE)
+  tagPermission      PermissionLevel @default(EVERYONE)
+  commentPermission  PermissionLevel @default(EVERYONE)
+
+  @@map("user_settings")
+}
+
+model UserLocation {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  latitude  Float?
+  longitude Float?
+  city      String?
+  country   String?
+  updatedAt DateTime @updatedAt
+
+  @@map("user_locations")
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userAgent String?
+  ipAddress String?
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  refreshTokens RefreshToken[]
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("sessions")
+}
+
+model RefreshToken {
+  id        String    @id @default(cuid())
+  tokenHash String    @unique
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sessionId String
+  session   Session   @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+  @@index([sessionId])
+  @@index([expiresAt])
+  @@map("refresh_tokens")
+}
+
+enum SubscriptionTier {
+  FREE
+  PREMIUM
+  PLATINUM
+}
+
+enum UserRole {
+  USER
+  ADMIN
+}
+
+enum VerificationTokenType {
+  EMAIL_VERIFY
+  PASSWORD_RESET
+}
+
+enum ReportReason {
+  SPAM
+  FAKE_PROFILE
+  HARASSMENT
+  INAPPROPRIATE_CONTENT
+  UNDERAGE
+  OTHER
+}
+
+enum ReportStatus {
+  PENDING
+  REVIEWED
+  DISMISSED
+}
+
+enum PermissionLevel {
+  EVERYONE
+  FOLLOWERS
+  NONE
+}
+
+enum FollowStatus {
+  PENDING
+  ACCEPTED
+}
+
+enum PostVisibility {
+  PUBLIC
+  FOLLOWERS
+  PRIVATE
+}
+
+enum PostStatus {
+  DRAFT
+  PUBLISHED
+}
+
+enum MediaType {
+  IMAGE
+  VIDEO
+}
+
+enum MessageType {
+  TEXT
+  IMAGE
+  AUDIO
+  GIF
+  SYSTEM
+}
+
+enum NotificationType {
+  MESSAGE
+  FOLLOW
+  FOLLOW_REQUEST
+  LIKE
+  COMMENT
+  REPLY
+  MENTION
+  STORY_REACTION
+  STORY_COMMENT
+  STORY
+}
+
+model UserBlock {
+  id        String   @id @default(cuid())
+  blockerId String
+  blockedId String
+  blocker   User     @relation("BlocksSent", fields: [blockerId], references: [id], onDelete: Cascade)
+  blocked   User     @relation("BlocksReceived", fields: [blockedId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([blockerId, blockedId])
+  @@index([blockerId])
+  @@index([blockedId])
+  @@map("user_blocks")
+}
+
+model UserMute {
+  id        String   @id @default(cuid())
+  muterId   String
+  mutedId   String
+  muter     User     @relation("MutesSent", fields: [muterId], references: [id], onDelete: Cascade)
+  muted     User     @relation("MutesReceived", fields: [mutedId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([muterId, mutedId])
+  @@index([muterId])
+  @@map("user_mutes")
+}
+
+model Follow {
+  id          String       @id @default(cuid())
+  followerId  String
+  followingId String
+  follower    User         @relation("UserFollowing", fields: [followerId], references: [id], onDelete: Cascade)
+  following   User         @relation("UserFollowers", fields: [followingId], references: [id], onDelete: Cascade)
+  status      FollowStatus @default(ACCEPTED)
+  createdAt   DateTime     @default(now())
+
+  @@unique([followerId, followingId])
+  @@index([followerId])
+  @@index([followingId])
+  @@index([followingId, status])
+  @@map("follows")
+}
+
+model Post {
+  id         String         @id @default(cuid())
+  authorId   String
+  author     User           @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  caption    String?
+  location   String?
+  visibility PostVisibility @default(PUBLIC)
+  status     PostStatus     @default(PUBLISHED)
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+
+  media     PostMedia[]
+  likes     PostLike[]
+  comments  PostComment[]
+  saves     SavedPost[]
+  hashtags  PostHashtag[]
+  mentions  PostMention[]
+
+  @@index([authorId, createdAt])
+  @@index([status, createdAt])
+  @@map("posts")
+}
+
+model PostMedia {
+  id      String    @id @default(cuid())
+  postId  String
+  post    Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
+  url     String
+  type    MediaType @default(IMAGE)
+  order   Int       @default(0)
+  altText String?
+
+  @@index([postId])
+  @@map("post_media")
+}
+
+model PostLike {
+  postId    String
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@id([postId, userId])
+  @@index([userId])
+  @@map("post_likes")
+}
+
+model PostComment {
+  id        String        @id @default(cuid())
+  postId    String
+  post      Post          @relation(fields: [postId], references: [id], onDelete: Cascade)
+  authorId  String
+  author    User          @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  parentId  String?
+  parent    PostComment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies   PostComment[] @relation("CommentReplies")
+  text      String
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  likes CommentLike[]
+
+  @@index([postId, createdAt])
+  @@index([authorId])
+  @@map("post_comments")
+}
+
+model CommentLike {
+  commentId String
+  comment   PostComment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime    @default(now())
+
+  @@id([commentId, userId])
+  @@map("comment_likes")
+}
+
+model SavedPost {
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  postId    String
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@id([userId, postId])
+  @@map("saved_posts")
+}
+
+model Hashtag {
+  id    String        @id @default(cuid())
+  name  String        @unique
+  posts PostHashtag[]
+
+  @@map("hashtags")
+}
+
+model PostHashtag {
+  postId    String
+  post      Post    @relation(fields: [postId], references: [id], onDelete: Cascade)
+  hashtagId String
+  hashtag   Hashtag @relation(fields: [hashtagId], references: [id], onDelete: Cascade)
+
+  @@id([postId, hashtagId])
+  @@index([hashtagId])
+  @@map("post_hashtags")
+}
+
+model PostMention {
+  postId String
+  post   Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([postId, userId])
+  @@index([userId])
+  @@map("post_mentions")
+}
+
+model Story {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  mediaUrl  String
+  mediaType MediaType @default(IMAGE)
+  expiresAt DateTime
+  createdAt DateTime  @default(now())
+
+  views     StoryView[]
+  reactions StoryReaction[]
+  comments  StoryComment[]
+
+  @@index([userId, expiresAt])
+  @@index([expiresAt])
+  @@map("stories")
+}
+
+model StoryView {
+  id       String   @id @default(cuid())
+  storyId  String
+  story    Story    @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  viewerId String
+  viewer   User     @relation(fields: [viewerId], references: [id], onDelete: Cascade)
+  viewedAt DateTime @default(now())
+
+  @@unique([storyId, viewerId])
+  @@index([viewerId])
+  @@map("story_views")
+}
+
+model StoryReaction {
+  id        String   @id @default(cuid())
+  storyId   String
+  story     Story    @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  emoji     String
+  createdAt DateTime @default(now())
+
+  @@unique([storyId, userId])
+  @@map("story_reactions")
+}
+
+model StoryComment {
+  id        String   @id @default(cuid())
+  storyId   String
+  story     Story    @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  text      String
+  createdAt DateTime @default(now())
+
+  @@index([storyId, createdAt])
+  @@map("story_comments")
+}
+
+model Conversation {
+  id            String   @id @default(cuid())
+  lastMessageAt DateTime @default(now())
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  messages     Message[]
+  participants ConversationParticipant[]
+
+  @@index([lastMessageAt])
+  @@map("conversations")
+}
+
+model ConversationParticipant {
+  id             String       @id @default(cuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lastReadAt     DateTime?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@unique([conversationId, userId])
+  @@index([userId])
+  @@map("conversation_participants")
+}
+
+model Message {
+  id             String       @id @default(cuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  senderId       String
+  sender         User         @relation("MessagesSent", fields: [senderId], references: [id], onDelete: Cascade)
+  type           MessageType  @default(TEXT)
+  text           String?
+  imageUrl       String?
+  audioUrl       String?
+  replyToId      String?
+  replyTo        Message?     @relation("MessageReplies", fields: [replyToId], references: [id], onDelete: SetNull)
+  replies        Message[]    @relation("MessageReplies")
+  isEdited       Boolean      @default(false)
+  isDeleted      Boolean      @default(false)
+  deliveredAt    DateTime?
+  seenAt         DateTime?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  reactions MessageReaction[]
+  hides     MessageHide[]
+
+  @@index([conversationId, createdAt])
+  @@index([senderId])
+  @@map("messages")
+}
+
+model MessageReaction {
+  id        String   @id @default(cuid())
+  messageId String
+  message   Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  emoji     String
+  createdAt DateTime @default(now())
+
+  @@unique([messageId, userId])
+  @@index([messageId])
+  @@map("message_reactions")
+}
+
+model MessageHide {
+  messageId String
+  message   Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@id([messageId, userId])
+  @@map("message_hides")
+}
+
+model ChatTyping {
+  id             String   @id @default(cuid())
+  conversationId String
+  userId         String
+  expiresAt      DateTime
+  updatedAt      DateTime @updatedAt
+
+  @@unique([conversationId, userId])
+  @@index([conversationId, expiresAt])
+  @@map("chat_typing")
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      NotificationType
+  title     String
+  body      String?
+  data      Json?
+  read      Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  @@index([userId, read, createdAt])
+  @@map("notifications")
+}
+
+model VerificationToken {
+  id        String                @id @default(cuid())
+  userId    String
+  user      User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      VerificationTokenType
+  tokenHash String                @unique
+  expiresAt DateTime
+  createdAt DateTime              @default(now())
+
+  @@index([userId, type])
+  @@map("verification_tokens")
+}
+
+model UserReport {
+  id             String       @id @default(cuid())
+  reporterId     String
+  reporter       User         @relation("ReportsFiled", fields: [reporterId], references: [id], onDelete: Cascade)
+  reportedUserId String
+  reported       User         @relation("ReportsReceived", fields: [reportedUserId], references: [id], onDelete: Cascade)
+  reason         ReportReason
+  details        String?
+  status         ReportStatus @default(PENDING)
+  reviewedAt     DateTime?
+  createdAt      DateTime     @default(now())
+
+  @@index([status, createdAt])
+  @@index([reportedUserId])
+  @@index([reporterId])
+  @@map("user_reports")
+}

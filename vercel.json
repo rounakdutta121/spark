@@ -1,0 +1,10 @@
+{
+  "functions": {
+    "src/app/api/chat/poll/route.ts": {
+      "maxDuration": 10
+    },
+    "src/app/api/upload/file/route.ts": {
+      "maxDuration": 60
+    }
+  }
+}
