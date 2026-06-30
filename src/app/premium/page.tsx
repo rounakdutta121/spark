@@ -9,7 +9,7 @@ export default function PremiumPage() {
   return (
     <ComingSoon
       title="Spark Premium"
-      description="Unlimited swipes, boosts, and more — coming in Step 8."
+      description="Analytics, pinned posts, and creator tools — coming soon."
     />
   );
 }

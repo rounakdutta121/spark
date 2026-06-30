@@ -59,7 +59,7 @@ function isAuthRoute(pathname: string): boolean {
   return authRoutes.some((route) => pathname.startsWith(route));
 }
 
-const legacyDatingRedirects: Record<string, string> = {
+const legacyRouteRedirects: Record<string, string> = {
   "/discover": "/feed",
   "/matches": "/messages",
   "/likes": "/notifications",
@@ -71,7 +71,7 @@ const legacyDatingRedirects: Record<string, string> = {
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  const legacy = legacyDatingRedirects[pathname];
+  const legacy = legacyRouteRedirects[pathname];
   if (legacy) {
     return addSecurityHeaders(NextResponse.redirect(new URL(legacy, request.url)));
   }

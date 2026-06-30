@@ -5,6 +5,7 @@ import {
   LandingFeatures,
   LandingHero,
   LandingHowItWorks,
+  LandingStats,
 } from "@/features/landing/components/landing-sections";
 
 export function LandingPage() {
@@ -13,6 +14,7 @@ export function LandingPage() {
       <Navbar />
       <main className="flex-1">
         <LandingHero />
+        <LandingStats />
         <LandingFeatures />
         <LandingHowItWorks />
         <LandingCta />
