@@ -11,7 +11,7 @@ import {
 } from "@/lib/api/require-auth";
 import {
   listNotifications,
-  markNotificationsRead,
+  deleteNotifications,
   getUnreadNotificationCount,
 } from "@/services/social/notification-list.service";
 
@@ -45,10 +45,10 @@ export async function PATCH(request: Request) {
     const parsed = markSchema.safeParse(body);
     if (!parsed.success) return validationErrorResponse(parsed.error);
 
-    await markNotificationsRead(userId, parsed.data.ids);
+    await deleteNotifications(userId, parsed.data.ids);
     return successResponse({ ok: true });
   } catch (error) {
     if (error instanceof UnauthorizedError) return unauthorizedResponse();
-    return errorResponse("Failed to update notifications", 500);
+    return errorResponse("Failed to delete notifications", 500);
   }
 }

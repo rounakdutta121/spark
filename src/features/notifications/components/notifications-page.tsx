@@ -31,6 +31,36 @@ export function NotificationsPage() {
   const cursorRef = useRef<string | null>(null);
   const hasMoreRef = useRef(true);
   const loadingRef = useRef(false);
+  const viewedIdsRef = useRef<string[]>([]);
+
+  const deleteNotifications = useCallback(async (ids: string[]) => {
+    if (ids.length === 0) return;
+    await apiClient("/api/notifications", {
+      method: "PATCH",
+      body: JSON.stringify({ ids }),
+    });
+    notifyNotificationsUpdated();
+  }, []);
+
+  const removeViewed = useCallback((ids: string[]) => {
+    if (ids.length === 0) return;
+    const idSet = new Set(ids);
+    setItems((prev) => prev.filter((n) => !idSet.has(n.id)));
+    viewedIdsRef.current = viewedIdsRef.current.filter((id) => !idSet.has(id));
+  }, []);
+
+  const handleNotificationViewed = useCallback(
+    async (id: string) => {
+      if (!viewedIdsRef.current.includes(id)) return;
+      try {
+        await deleteNotifications([id]);
+        removeViewed([id]);
+      } catch {
+        toast.error("Could not clear notification");
+      }
+    },
+    [deleteNotifications, removeViewed],
+  );
 
   const load = useCallback(async (reset = false) => {
     if (!reset && !hasMoreRef.current) return;
@@ -40,6 +70,7 @@ export function NotificationsPage() {
     if (reset) {
       cursorRef.current = null;
       hasMoreRef.current = true;
+      viewedIdsRef.current = [];
       setLoading(true);
     } else {
       setLoadingMore(true);
@@ -55,18 +86,15 @@ export function NotificationsPage() {
       }>(`/api/notifications${params.toString() ? `?${params}` : ""}`);
 
       setItems((prev) => mergeNotifications(prev, data.notifications, reset));
+      viewedIdsRef.current = [
+        ...new Set([
+          ...viewedIdsRef.current,
+          ...data.notifications.map((n) => n.id),
+        ]),
+      ];
       cursorRef.current = data.nextCursor;
       hasMoreRef.current = data.hasMore;
       setHasMore(data.hasMore);
-
-      if (reset && data.notifications.length > 0) {
-        await apiClient("/api/notifications", {
-          method: "PATCH",
-          body: JSON.stringify({}),
-        });
-        setItems((prev) => prev.map((n) => ({ ...n, read: true })));
-        notifyNotificationsUpdated();
-      }
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Failed to load notifications");
     } finally {
@@ -79,6 +107,14 @@ export function NotificationsPage() {
   useEffect(() => {
     void load(true);
   }, [load]);
+
+  useEffect(() => {
+    return () => {
+      const ids = [...viewedIdsRef.current];
+      if (ids.length === 0) return;
+      void deleteNotifications(ids).catch(() => {});
+    };
+  }, [deleteNotifications]);
 
   if (loading && items.length === 0) {
     return <PageLoader label="Loading notifications…" />;
@@ -115,11 +151,22 @@ export function NotificationsPage() {
             </GlassCard>
           );
           return href ? (
-            <Link key={n.id} href={href}>
+            <Link
+              key={n.id}
+              href={href}
+              onClick={() => void handleNotificationViewed(n.id)}
+            >
               {inner}
             </Link>
           ) : (
-            <div key={n.id}>{inner}</div>
+            <button
+              key={n.id}
+              type="button"
+              className="block w-full text-left"
+              onClick={() => void handleNotificationViewed(n.id)}
+            >
+              {inner}
+            </button>
           );
         })
       )}

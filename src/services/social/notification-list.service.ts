@@ -75,15 +75,14 @@ export async function listNotifications(
   };
 }
 
-export async function markNotificationsRead(
+export async function deleteNotifications(
   userId: string,
   ids?: string[],
 ): Promise<void> {
-  await prisma.notification.updateMany({
+  await prisma.notification.deleteMany({
     where: ids?.length
       ? { userId, id: { in: ids } }
-      : { userId, read: false },
-    data: { read: true },
+      : { userId },
   });
 }
 
