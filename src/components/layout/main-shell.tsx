@@ -99,7 +99,7 @@ export function MainShell({ children }: { children: React.ReactNode }) {
       className={cn(
         "app-shell bg-gradient-to-b from-background via-background to-muted/30",
         isNativeApp
-          ? "flex h-[100dvh] flex-col overflow-hidden"
+          ? "flex h-full flex-col overflow-hidden"
           : "min-h-[100dvh]",
         !isChatFullscreen &&
           !isNativeApp &&

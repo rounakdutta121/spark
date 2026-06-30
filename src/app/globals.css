@@ -86,6 +86,11 @@
   --sidebar-ring: oklch(0.708 0 0);
 }
 
+:root {
+  --app-safe-top: 0px;
+  --app-safe-bottom: 0px;
+}
+
 .dark {
   --background: oklch(0.12 0.01 30);
   --foreground: oklch(0.985 0 0);
@@ -134,16 +139,21 @@
   }
   html.native-app {
     -webkit-tap-highlight-color: transparent;
-    --app-safe-top: 0px;
-    --app-safe-bottom: 0px;
+    --app-safe-top: 40px;
+    --app-safe-bottom: 24px;
   }
-  html.native-app body {
+  html.native-app body.native-app-body {
+    box-sizing: border-box;
+    min-height: 100dvh;
+    padding-top: var(--app-safe-top);
     overscroll-behavior-y: none;
-    height: 100dvh;
-    overflow: hidden;
   }
   html.native-app .app-shell {
-    max-height: 100dvh;
+    height: calc(100dvh - var(--app-safe-top));
+    max-height: calc(100dvh - var(--app-safe-top));
+  }
+  html.native-app .native-screen {
+    min-height: calc(100dvh - var(--app-safe-top));
   }
   html.native-app .chat-composer {
     padding-bottom: max(0.5rem, var(--app-safe-bottom, 0px));

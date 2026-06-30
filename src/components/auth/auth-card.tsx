@@ -21,7 +21,7 @@ export function AuthCard({
   className,
 }: AuthCardProps) {
   return (
-    <div className={cn("relative flex min-h-screen items-center justify-center px-4 py-12", className)}>
+    <div className={cn("relative flex min-h-[calc(100dvh-var(--app-safe-top,0px))] items-center justify-center px-4 py-8 sm:py-12", className)}>
       <div className="absolute inset-0 -z-10 overflow-hidden">
         <div className="absolute left-1/4 top-1/4 size-96 rounded-full bg-[#FF4458]/15 blur-3xl" />
         <div className="absolute right-1/4 bottom-1/4 size-80 rounded-full bg-[#FF8E53]/15 blur-3xl" />

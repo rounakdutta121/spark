@@ -8,6 +8,28 @@ import { useAuthContext } from "@/providers/auth-provider";
 
 const LANDING_PATHS = new Set(["/", "/home"]);
 
+/** Default status-bar inset when env(safe-area-inset-top) is 0 in Android WebView. */
+const ANDROID_STATUS_BAR_PX = 40;
+
+function applyNativeSafeArea(platform: "android" | "ios" | "web") {
+  const root = document.documentElement;
+  const body = document.body;
+
+  root.classList.add("native-app");
+  root.classList.add(`native-${platform}`);
+  body.classList.add("native-app-body");
+
+  const topInset =
+    platform === "android"
+      ? `${ANDROID_STATUS_BAR_PX}px`
+      : "env(safe-area-inset-top, 20px)";
+  const bottomInset =
+    platform === "android" ? "24px" : "env(safe-area-inset-bottom, 20px)";
+
+  root.style.setProperty("--app-safe-top", topInset);
+  root.style.setProperty("--app-safe-bottom", bottomInset);
+}
+
 export function NativeAppProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -17,24 +39,15 @@ export function NativeAppProvider({ children }: { children: React.ReactNode }) {
     if (!detectNativeApp()) return;
 
     const platform = getNativePlatform();
-    const root = document.documentElement;
-
-    root.classList.add("native-app");
-    root.classList.add(`native-${platform}`);
-
-    // Android WebView often reports 0 for env(safe-area-*); use fallbacks.
-    root.style.setProperty("--app-safe-top", "0px");
-    root.style.setProperty(
-      "--app-safe-bottom",
-      platform === "android" ? "24px" : platform === "ios" ? "20px" : "0px",
-    );
+    applyNativeSafeArea(platform);
 
     void (async () => {
       try {
         const { StatusBar, Style } = await import("@capacitor/status-bar");
-        await StatusBar.setOverlaysWebView({ overlay: false });
+        // Let web content control top inset via --app-safe-top (avoids double offset).
+        await StatusBar.setOverlaysWebView({ overlay: true });
         await StatusBar.setStyle({ style: Style.Dark });
-        await StatusBar.setBackgroundColor({ color: "#0a0a0a" });
+        await StatusBar.setBackgroundColor({ color: "#0a0a0a00" });
       } catch {
         // optional plugin
       }
