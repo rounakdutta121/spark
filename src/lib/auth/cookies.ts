@@ -52,6 +52,7 @@ export function buildClearAuthCookies(): {
     sameSite: "lax",
     path: "/",
     maxAge: 0,
+    expires: new Date(0),
   };
 
   return [

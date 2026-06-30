@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { ROUTES } from "@/lib/constants";
 import { detectNativeApp, getNativePlatform } from "@/lib/native-app";
+import { isNativePublicPath } from "@/lib/auth/clear-session";
 import { useAuthContext } from "@/providers/auth-provider";
 
 const LANDING_PATHS = new Set(["/", "/home"]);
@@ -67,6 +68,13 @@ export function NativeAppProvider({ children }: { children: React.ReactNode }) {
     if (!LANDING_PATHS.has(pathname)) return;
 
     router.replace(isAuthenticated ? ROUTES.feed : ROUTES.login);
+  }, [pathname, isAuthenticated, loading, router]);
+
+  useEffect(() => {
+    if (!detectNativeApp() || loading || isAuthenticated) return;
+    if (isNativePublicPath(pathname)) return;
+
+    router.replace(ROUTES.login);
   }, [pathname, isAuthenticated, loading, router]);
 
   return children;

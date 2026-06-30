@@ -96,6 +96,14 @@ export function SettingsPage() {
     }
   };
 
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to log out");
+    }
+  };
+
   const handleLogoutAll = async () => {
     try {
       await logoutAllDevices();
@@ -264,6 +272,9 @@ export function SettingsPage() {
 
       <GlassCard className="space-y-3 p-4">
         <h2 className="font-semibold">Security</h2>
+        <Button variant="outline" className="w-full rounded-full" onClick={handleLogout}>
+          Log out
+        </Button>
         <Button variant="outline" className="w-full rounded-full" onClick={handleLogoutAll}>
           Log out of all devices
         </Button>

@@ -20,6 +20,12 @@ import {
   apiLogout,
   apiRegister,
 } from "@/services/auth/auth.api";
+import {
+  buildLogoutRedirectUrl,
+  clearClientAuthStorage,
+} from "@/lib/auth/clear-session";
+import { ROUTES } from "@/lib/constants";
+import { detectNativeApp } from "@/lib/native-app";
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
@@ -56,10 +62,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const logout = useCallback(async () => {
+    setUser(null);
+    clearClientAuthStorage();
+
+    if (detectNativeApp()) {
+      window.location.replace(buildLogoutRedirectUrl(ROUTES.login));
+      return;
+    }
+
     try {
       await apiLogout();
+    } catch {
+      // Server still clears cookies on error responses when possible.
     } finally {
-      setUser(null);
+      clearClientAuthStorage();
+      window.location.replace(ROUTES.login);
     }
   }, []);
 
