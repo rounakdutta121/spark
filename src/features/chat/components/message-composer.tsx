@@ -57,7 +57,7 @@ export function MessageComposer({
   };
 
   return (
-    <div className="border-t border-white/10 bg-background/80 p-3 backdrop-blur-xl">
+    <div className="chat-composer shrink-0 border-t border-white/10 bg-background px-3 py-2 sm:py-3">
       {replyTo && (
         <div className="mb-2 flex items-center justify-between rounded-xl bg-muted/40 px-3 py-2 text-sm">
           <div className="min-w-0 truncate">

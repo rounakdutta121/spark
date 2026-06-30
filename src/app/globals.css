@@ -132,6 +132,22 @@
   html {
     @apply font-sans scroll-smooth;
   }
+  html.native-app {
+    -webkit-tap-highlight-color: transparent;
+    --app-safe-top: 0px;
+    --app-safe-bottom: 0px;
+  }
+  html.native-app body {
+    overscroll-behavior-y: none;
+    height: 100dvh;
+    overflow: hidden;
+  }
+  html.native-app .app-shell {
+    max-height: 100dvh;
+  }
+  html.native-app .chat-composer {
+    padding-bottom: max(0.5rem, var(--app-safe-bottom, 0px));
+  }
 }
 
 @layer utilities {

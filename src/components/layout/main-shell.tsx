@@ -17,6 +17,7 @@ import { EmailVerificationBanner } from "@/components/layout/email-verification-
 import { ThemeToggle } from "@/components/layout/theme-toggle";
 import { UploadPostModal } from "@/features/feed/components/upload-post-modal";
 import { ROUTES } from "@/lib/constants";
+import { useIsNativeApp } from "@/lib/native-app";
 import { cn } from "@/lib/utils";
 
 const LEFT_NAV = [
@@ -83,46 +84,67 @@ function NavLink({
 export function MainShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [uploadOpen, setUploadOpen] = useState(false);
+  const isNativeApp = useIsNativeApp();
+
+  const isChatFullscreen = pathname.startsWith("/conversations/");
+  const showTopHeader = !isNativeApp && !isChatFullscreen;
 
   const isActive = (href: string) =>
     pathname === href || pathname.startsWith(`${href}/`);
 
-  return (
-    <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted/30 pb-[calc(5.5rem+env(safe-area-inset-bottom))] lg:pb-0">
-      <EmailVerificationBanner />
-      <header className="sticky top-0 z-40 border-b border-white/10 bg-background/70 backdrop-blur-xl">
-        <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4 sm:px-6">
-          <Logo />
-          <div className="flex items-center gap-1">
-            <button
-              type="button"
-              onClick={() => setUploadOpen(true)}
-              className="hidden items-center gap-2 rounded-full bg-gradient-to-br from-[#FF4458] to-[#FF6B35] px-4 py-2 text-sm font-medium text-white shadow-md shadow-[#FF4458]/20 transition-transform hover:scale-[1.02] active:scale-95 lg:inline-flex"
-            >
-              <Plus className="size-4" />
-              Create
-            </button>
-            <NotificationBell />
-            <Link
-              href={ROUTES.settings}
-              className="rounded-full p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-              aria-label="Settings"
-            >
-              <Settings className="size-5" />
-            </Link>
-            <Link
-              href={ROUTES.profile}
-              className="rounded-full p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground lg:hidden"
-              aria-label="Profile"
-            >
-              <User className="size-5" />
-            </Link>
-            <ThemeToggle />
-          </div>
-        </div>
-      </header>
+  const logoHref = isNativeApp ? ROUTES.feed : ROUTES.home;
 
-      <div className="mx-auto flex w-full max-w-6xl lg:gap-8 lg:px-6 lg:py-6">
+  return (
+    <div
+      className={cn(
+        "app-shell bg-gradient-to-b from-background via-background to-muted/30",
+        isNativeApp
+          ? "flex h-[100dvh] flex-col overflow-hidden"
+          : "min-h-[100dvh]",
+        !isChatFullscreen &&
+          !isNativeApp &&
+          "pb-[calc(4.75rem+env(safe-area-inset-bottom))] lg:pb-0",
+        !isChatFullscreen &&
+          isNativeApp &&
+          "pb-[calc(3.75rem+var(--app-safe-bottom,0px))]",
+      )}
+    >
+      <EmailVerificationBanner />
+      {showTopHeader && (
+        <header className="sticky top-0 z-40 shrink-0 border-b border-white/10 bg-background/70 pt-[env(safe-area-inset-top)] backdrop-blur-xl">
+          <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-2 px-3 sm:px-6">
+            <Logo href={logoHref} showText={false} size="sm" className="min-w-0 shrink" />
+            <div className="flex shrink-0 items-center gap-0.5 sm:gap-1">
+              <button
+                type="button"
+                onClick={() => setUploadOpen(true)}
+                className="hidden items-center gap-2 rounded-full bg-gradient-to-br from-[#FF4458] to-[#FF6B35] px-4 py-2 text-sm font-medium text-white shadow-md shadow-[#FF4458]/20 transition-transform hover:scale-[1.02] active:scale-95 lg:inline-flex"
+              >
+                <Plus className="size-4" />
+                Create
+              </button>
+              <NotificationBell />
+              <Link
+                href={ROUTES.settings}
+                className="rounded-full p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                aria-label="Settings"
+              >
+                <Settings className="size-5" />
+              </Link>
+              <div className="hidden sm:block">
+                <ThemeToggle />
+              </div>
+            </div>
+          </div>
+        </header>
+      )}
+
+      <div
+        className={cn(
+          "mx-auto flex w-full max-w-6xl lg:gap-8 lg:px-6 lg:py-6",
+          isNativeApp && "min-h-0 flex-1",
+        )}
+      >
         <aside className="sticky top-20 hidden h-[calc(100vh-6rem)] w-56 shrink-0 lg:block">
           <nav className="space-y-1">
             {DESKTOP_NAV.map((item) => (
@@ -131,35 +153,52 @@ export function MainShell({ children }: { children: React.ReactNode }) {
           </nav>
         </aside>
 
-        <main className="min-w-0 flex-1 px-4 py-4 sm:px-6 sm:py-6 lg:max-w-2xl lg:px-0 lg:py-0 xl:max-w-3xl">
+        <main
+          className={cn(
+            "min-w-0 flex-1",
+            isChatFullscreen
+              ? "flex min-h-0 flex-col overflow-hidden p-0"
+              : "px-3 py-4 sm:px-6 sm:py-6 lg:max-w-2xl lg:px-0 lg:py-0 xl:max-w-3xl",
+            isNativeApp && !isChatFullscreen && "min-h-0 overflow-y-auto overscroll-contain",
+          )}
+        >
           {children}
         </main>
       </div>
 
-      <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-white/10 bg-background/80 backdrop-blur-xl pb-[env(safe-area-inset-bottom)] lg:hidden">
-        <div className="mx-auto flex max-w-lg items-end justify-between px-2 pb-2 pt-1 sm:max-w-xl">
-          <div className="flex flex-1 justify-around">
-            {LEFT_NAV.map((item) => (
-              <NavLink key={item.href} {...item} active={isActive(item.href)} />
-            ))}
-          </div>
+      {!isChatFullscreen && (
+        <nav
+          className={cn(
+            "z-40 border-t border-white/10 bg-background/95 backdrop-blur-xl lg:hidden",
+            isNativeApp
+              ? "shrink-0 pb-[var(--app-safe-bottom,0px)]"
+              : "fixed bottom-0 left-0 right-0 pb-[env(safe-area-inset-bottom)]",
+          )}
+        >
+          <div className="mx-auto flex max-w-lg items-end justify-between px-1 pb-1.5 pt-1 sm:max-w-xl sm:px-2 sm:pb-2">
+            <div className="flex flex-1 justify-around">
+              {LEFT_NAV.map((item) => (
+                <NavLink key={item.href} {...item} active={isActive(item.href)} />
+              ))}
+            </div>
 
-          <button
-            type="button"
-            onClick={() => setUploadOpen(true)}
-            className="-mt-7 flex size-14 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#FF4458] to-[#FF6B35] text-white shadow-lg shadow-[#FF4458]/30 transition-transform hover:scale-105 active:scale-95 sm:size-16"
-            aria-label="Create post"
-          >
-            <Plus className="size-7 stroke-[2.5] sm:size-8" />
-          </button>
+            <button
+              type="button"
+              onClick={() => setUploadOpen(true)}
+              className="-mt-6 flex size-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#FF4458] to-[#FF6B35] text-white shadow-lg shadow-[#FF4458]/30 transition-transform hover:scale-105 active:scale-95 sm:-mt-7 sm:size-14"
+              aria-label="Create post"
+            >
+              <Plus className="size-6 stroke-[2.5] sm:size-7" />
+            </button>
 
-          <div className="flex flex-1 justify-around">
-            {RIGHT_NAV.map((item) => (
-              <NavLink key={item.href} {...item} active={isActive(item.href)} />
-            ))}
+            <div className="flex flex-1 justify-around">
+              {RIGHT_NAV.map((item) => (
+                <NavLink key={item.href} {...item} active={isActive(item.href)} />
+              ))}
+            </div>
           </div>
-        </div>
-      </nav>
+        </nav>
+      )}
 
       <UploadPostModal open={uploadOpen} onOpenChange={setUploadOpen} />
     </div>

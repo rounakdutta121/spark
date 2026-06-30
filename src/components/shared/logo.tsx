@@ -7,6 +7,7 @@ interface LogoProps {
   className?: string;
   showText?: boolean;
   size?: "sm" | "md" | "lg";
+  href?: string;
 }
 
 const sizeMap = {
@@ -15,12 +16,17 @@ const sizeMap = {
   lg: { icon: "size-8", text: "text-2xl" },
 };
 
-export function Logo({ className, showText = true, size = "md" }: LogoProps) {
+export function Logo({
+  className,
+  showText = true,
+  size = "md",
+  href = "/",
+}: LogoProps) {
   const sizes = sizeMap[size];
 
   return (
     <Link
-      href="/"
+      href={href}
       className={cn("flex items-center gap-2 font-bold tracking-tight", className)}
     >
       <span className="flex items-center justify-center rounded-xl bg-gradient-to-br from-[#FF4458] to-[#FF8E53] p-1.5 shadow-lg shadow-[#FF4458]/25">

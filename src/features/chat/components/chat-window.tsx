@@ -322,7 +322,7 @@ export function ChatWindow({ conversationId }: ChatWindowProps) {
 
   if (unavailable) {
     return (
-      <div className="flex h-[calc(100dvh-3.5rem)] flex-col items-center justify-center gap-4 px-6 text-center">
+      <div className="flex h-full min-h-0 flex-1 flex-col items-center justify-center gap-4 px-6 text-center">
         <p className="text-lg font-semibold">Conversation unavailable</p>
         <p className="text-sm text-muted-foreground">
           This person may have deleted their account. Your message history was
@@ -339,8 +339,8 @@ export function ChatWindow({ conversationId }: ChatWindowProps) {
   }
 
   return (
-    <div className="flex h-[calc(100dvh-3.5rem)] flex-col">
-      <header className="flex items-center gap-3 border-b border-white/10 bg-background/80 px-3 py-3 backdrop-blur-xl">
+    <div className="grid h-full min-h-0 flex-1 grid-rows-[auto_minmax(0,1fr)_auto] bg-background">
+      <header className="flex shrink-0 items-center gap-3 border-b border-white/10 bg-background px-3 py-3">
         <Link
           href={ROUTES.messages}
           className="rounded-full p-2 hover:bg-muted"
@@ -366,7 +366,7 @@ export function ChatWindow({ conversationId }: ChatWindowProps) {
 
       <div
         ref={listRef}
-        className="flex-1 overflow-y-auto px-3 py-4"
+        className="relative min-h-0 overflow-y-auto overscroll-contain px-3 py-4"
         onScroll={(e) => {
           const el = e.currentTarget;
           const nearBottom =
@@ -422,17 +422,17 @@ export function ChatWindow({ conversationId }: ChatWindowProps) {
 
         {isTyping && <TypingIndicator name={conversation?.otherUser.name} />}
         <div ref={bottomRef} />
-      </div>
 
-      {showScrollBtn && (
-        <button
-          type="button"
-          onClick={() => scrollToBottom()}
-          className="absolute bottom-24 right-6 rounded-full bg-background/90 p-2 shadow-lg backdrop-blur"
-        >
-          <ChevronDown className="size-5" />
-        </button>
-      )}
+        {showScrollBtn && (
+          <button
+            type="button"
+            onClick={() => scrollToBottom()}
+            className="sticky bottom-4 left-full z-10 -ml-12 rounded-full bg-background/90 p-2 shadow-lg backdrop-blur"
+          >
+            <ChevronDown className="size-5" />
+          </button>
+        )}
+      </div>
 
       <MessageComposer
         disabled={sending}
